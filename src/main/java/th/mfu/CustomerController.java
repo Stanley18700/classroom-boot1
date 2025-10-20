@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,18 +21,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class CustomerController {
 
     @Autowired
-    CustomerRepository repo;
+    CustomerRepository customerRepo;
+
+    @Autowired
+    OrderRepository orderRepo;
+
 
     @GetMapping("/customers")
     public ResponseEntity<Collection> getAllCustomers(){
-        if(repo.findAll().isEmpty())
+        if(customerRepo.findAll().isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        return new ResponseEntity<Collection>(repo.findAll(), HttpStatus.OK);
+        return new ResponseEntity<Collection>(customerRepo.findAll(), HttpStatus.OK);
     }
 
     @GetMapping("/customers/{id}")
     public ResponseEntity<Customer> getCustomer(@PathVariable int id){
-        Optional<Customer> cust = repo.findById(id);
+        Optional<Customer> cust = customerRepo.findById(id);
         if( !cust.isPresent()){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -39,23 +45,24 @@ public class CustomerController {
 
     @PostMapping("/customers")
     public ResponseEntity<String> createCustomer(@RequestBody Customer cust){
-        repo.save(cust);
+        customerRepo.save(cust);
         return new ResponseEntity<String>("Customer created!", HttpStatus.CREATED);
     }
 
     @PutMapping("/customers/{id}")
     public ResponseEntity<String> updateCustomer(@PathVariable int id, @RequestBody Customer cust){
-        if(!repo.findById(id).isPresent())
+        if(!customerRepo.findById(id).isPresent())
             return new ResponseEntity<String>("Customer not found!", HttpStatus.NOT_FOUND);
         cust.setId(id);
-        repo.save(cust);
+        customerRepo.save(cust);
         return new ResponseEntity<String>("Customer updated!", HttpStatus.OK);
     }
 
-
+    @Transactional
     @DeleteMapping("/customers/{id}")
     public ResponseEntity<String> deleteCustomer(@PathVariable int id){
-        repo.deleteById(id);
+        orderRepo.deleteByCustomerId(id);
+        customerRepo.deleteById(id);
         return new ResponseEntity<String>("Customer deleted!", HttpStatus.NO_CONTENT);
     }
 
